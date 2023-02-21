@@ -19,6 +19,9 @@ func CalculateNextPayDay(day int) int {
 	if isWeekend(day) == "Sunday" {
 		nextPayDate = day - 2
 	}
+	if day > GetDaysOfCurrentMonth() {
+		nextPayDate = GetDaysOfCurrentMonth()
+	}
 	return nextPayDate
 }
 
