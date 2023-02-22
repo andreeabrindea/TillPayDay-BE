@@ -1,7 +1,7 @@
 package main
 
 type PayDay struct {
-	Date string `json:"date"`
+	Dates []NextPayDate `json:"dates"`
 }
 
 type NextPayDate struct {

@@ -12,17 +12,13 @@ func ValidateDay(payDay int) error {
 	return nil
 }
 func GetNextPayDay(payDay int, currentMonth time.Month, currentYear int) int {
-	nextPayDate := payDay
+	date := time.Date(currentYear, currentMonth, payDay, 0, 0, 0, 0, time.UTC)
 	if isSaturday(payDay, currentMonth, currentYear) == true {
-		nextPayDate = payDay - 1
+		date = date.AddDate(0, 0, -1) // add -1 days to move to Friday
+	} else if isSunday(payDay, currentMonth, currentYear) == true {
+		date = date.AddDate(0, 0, -2) // add -2 to move to Frida
 	}
-	if isSunday(payDay, currentMonth, currentYear) == true {
-		nextPayDate = payDay - 2
-	}
-	if payDay > GetDaysOfCurrentMonth(currentMonth, currentYear) {
-		nextPayDate = GetDaysOfCurrentMonth(currentMonth, currentYear)
-	}
-	return nextPayDate
+	return date.Day()
 }
 
 func isSunday(payDay int, currentMonth time.Month, currentYear int) bool {
@@ -36,46 +32,25 @@ func isSunday(payDay int, currentMonth time.Month, currentYear int) bool {
 }
 func isSaturday(payDay int, currentMonth time.Month, currentYear int) bool {
 	date := time.Date(currentYear, currentMonth, payDay, 0, 0, 0, 0, time.UTC)
-
-	// Check if the weekday is Saturday or Sunday (time.Saturday and time.Sunday, respectively, in Go's weekday numbering)
 	if date.Weekday() == time.Saturday {
 		return true
 	}
 	return false
 }
 
-func GetDaysLeft(payDay int, currentDay int, currentMonth time.Month, currentYear int) int {
-	daysLeft := GetNextPayDay(payDay, currentMonth, currentYear) - currentDay
+func GetDaysLeft(payDay int, currentDay int, currentMonth time.Month, followingMonth time.Month, currentYear int) int {
+	date := time.Date(currentYear, currentMonth, currentDay, 0, 0, 0, 0, time.UTC)
+	nextDate := time.Date(currentYear, followingMonth, GetNextPayDay(payDay, currentMonth, currentYear), 0, 0, 0, 0, time.UTC)
+	duration := nextDate.Sub(date)
 
-	if payDay > GetDaysOfCurrentMonth(currentMonth, currentYear) {
-		daysLeft = GetDaysOfCurrentMonth(currentMonth, currentYear) - currentDay
-
-	}
-
-	if GetNextPayDay(payDay, currentMonth, currentYear) < currentDay {
-		daysLeft = GetDaysOfCurrentMonth(currentMonth, currentYear) - currentDay + GetNextPayDay(payDay, currentMonth, currentYear)
-	}
-	return daysLeft
+	//the number of days between the two dates
+	days := int(duration.Hours() / 24)
+	return days
 }
 
 func GetMonthOfSalary(payDay int, currentDay int, currentMonth time.Month) int {
-	if payDay < currentDay {
+	if currentDay >= payDay {
 		return int(currentMonth + 1)
 	}
 	return int(currentMonth)
-}
-
-func GetDaysOfCurrentMonth(currentMonth time.Month, currentYear int) int {
-	if currentMonth == 2 {
-		if currentYear/4 == 0 {
-			return 29
-		} else {
-			return 28
-		}
-	}
-
-	if currentMonth == 1 || currentMonth == 3 || currentMonth == 5 || currentMonth == 7 || currentMonth == 8 || currentMonth == 10 || currentMonth == 12 {
-		return 31
-	}
-	return 30
 }

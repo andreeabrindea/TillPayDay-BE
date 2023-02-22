@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"internship-project3/compuations"
 	"net/http"
 	"strconv"
@@ -11,12 +10,10 @@ import (
 )
 
 func GetPayDay(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	pay_day := r.URL.Query().Get("pay_day")
-	fmt.Println("day =", pay_day)
 	payDay, err := strconv.Atoi(pay_day)
 	if err != nil {
-		_, err = w.Write([]byte("unexpected error"))
+		_, err = w.Write([]byte("argument couldn't be casted to int"))
 		if err != nil {
 			return
 		}
@@ -30,47 +27,52 @@ func GetPayDay(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
 	date := Data{Day: compuations.GetNextPayDay(payDay, time.Now().Month(), time.Now().Year()), Month: compuations.GetMonthOfSalary(payDay, time.Now().Day(), time.Now().Month())}
-	output := NextPayDate{NextDate: date, DaysLeft: compuations.GetDaysLeft(payDay, time.Now().Day(), time.Now().Month(), time.Now().Year())}
+	output := NextPayDate{NextDate: date, DaysLeft: compuations.GetDaysLeft(compuations.GetNextPayDay(payDay, time.Now().Month(), time.Now().Year()), time.Now().Day(), time.Now().Month(), time.Month(compuations.GetMonthOfSalary(payDay, time.Now().Day(), time.Now().Month())), time.Now().Year())}
 	msg, _ := json.MarshalIndent(output, "", "")
 	_, _ = w.Write(msg)
 
 }
 
 func ListDates(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	payDayParam := q.Get("pay_day")
-	if payDayParam == "" {
-		http.Error(w, "Missing pay_day parameter", http.StatusBadRequest)
+	// Extract the pay day from the URL path
+	parts := strings.Split(r.URL.Path, "/")
+	if len(parts) != 5 {
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
 		return
 	}
-
-	payDayParts := strings.Split(payDayParam, "/")
-	payDay, err := strconv.Atoi(payDayParts[0])
+	payDay, err := strconv.Atoi(parts[3])
 	if err != nil {
-		http.Error(w, "Invalid pay_day parameter", http.StatusBadRequest)
+		http.Error(w, "Invalid pay day", http.StatusBadRequest)
 		return
 	}
 
 	// Calculate next pay days
-	now := time.Now()
-	year := time.Now().Year()
-	var nextPayDays []string
-	for i := 1; i <= 12; i++ {
-		t := time.Date(year, time.Month(i), payDay, 0, 0, 0, 0, time.UTC)
-		if t.Before(now) {
-			t = t.AddDate(1, 0, 0)
+	err = compuations.ValidateDay(payDay)
+	if err != nil {
+		_, err := w.Write([]byte("wrong date"))
+		if err != nil {
+			return
 		}
-		nextPayDays = append(nextPayDays, t.Format("January 2, 2006"))
+		return
 	}
 
 	// Write response
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	fmt.Fprintf(w, "Next pay days for day %d:\n\n", payDay)
-	for _, date := range nextPayDays {
-		fmt.Fprintln(w, date)
+	w.Header().Set("Content-Type", "application/json")
+	var dates []NextPayDate
+	currentDay := time.Now().Day()
+	for i := time.Now().Month(); i < 12; i++ {
+		date := Data{Day: compuations.GetNextPayDay(payDay, i+1, time.Now().Year()), Month: compuations.GetMonthOfSalary(payDay, currentDay, i)}
+		nextPayDay := NextPayDate{NextDate: date, DaysLeft: compuations.GetDaysLeft(compuations.GetNextPayDay(payDay, i+1, time.Now().Year()), time.Now().Day(), time.Now().Month(), i+1, time.Now().Year())}
+		dates = append(dates, nextPayDay)
 	}
+	output := PayDay{Dates: dates}
+	msg, _ := json.MarshalIndent(output, "", "")
+	_, _ = w.Write(msg)
 }
+
 func main() {
 	http.HandleFunc(
 		"/till-salary/how-much",
