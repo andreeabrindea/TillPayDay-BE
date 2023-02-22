@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"internship-project3/compuations"
 	"net/http"
 	"strconv"
@@ -39,6 +40,17 @@ func GetPayDay(w http.ResponseWriter, r *http.Request) {
 func ListDates(w http.ResponseWriter, r *http.Request) {
 	// Extract the pay day from the URL path
 	parts := strings.Split(r.URL.Path, "/")
+	fmt.Println(parts)
+	ok := 0
+	for i := range parts {
+		if strings.Contains(parts[i], "list-dates") == true {
+			ok = 1
+		}
+	}
+	if ok != 1 {
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
+		return
+	}
 	if len(parts) != 5 {
 		http.Error(w, "Invalid URL", http.StatusBadRequest)
 		return
@@ -58,7 +70,6 @@ func ListDates(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
 	// Write response
 	w.Header().Set("Content-Type", "application/json")
 	var dates []NextPayDate
