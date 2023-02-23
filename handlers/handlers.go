@@ -2,8 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"internship-project3/computations"
+	"regexp"
 	"time"
 
 	"net/http"
@@ -11,82 +12,110 @@ import (
 	"strings"
 )
 
+// ParsePayDay extracts the pay day value from the URL query parameters of the request, converts it to an integer using the strconv.Atoi function.
+func ParsePayDay(r *http.Request) (int, error) {
+	payDayStr := r.URL.Query().Get("pay_day")
+	payDay, err := strconv.Atoi(payDayStr)
+	if err != nil {
+		return 0, errors.New("pay day should be an integer")
+	}
+	return payDay, nil
+}
+
+// ParseNextPayDay acts like a coordinator between ParsePayDay and GetPayDay.
+// It calculates the next pay and returns a NextPayDay struct that contains the formatted next pay day and the number of days left.
+// Note that currentTime and markerTime could be the same if we want to calculate the days left from now to the next pay day,
+// but if we want to calculate the days from now to the fifth salary day, then currentTime will be time.Now and markerTime the fifth month
+func ParseNextPayDay(payDay int, currentTime time.Time, markerTime time.Time, month time.Month) (NextPayDay, error) {
+	nextPayDay, err := computations.GetNextPayDay(payDay, markerTime, month)
+	if err != nil {
+		return NextPayDay{}, err
+	}
+	daysLeft, err := computations.GetDaysLeft(payDay, currentTime, month)
+	if err != nil {
+		return NextPayDay{}, err
+	}
+	output := NextPayDay{
+		NextPayDay: nextPayDay.Format("January 2, 2006"),
+		DaysLeft:   daysLeft,
+	}
+	return output, nil
+}
+
+// GetPayDay handles an HTTP request and returns a JSON response containing information about the next pay day
 func GetPayDay(w http.ResponseWriter, r *http.Request) {
-	pay_day := r.URL.Query().Get("pay_day")
-	payDay, err := strconv.Atoi(pay_day)
-	if err != nil {
-		_, err = w.Write([]byte("Argument couldn't be casted to int"))
-		if err != nil {
-			return
-		}
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	if payDay > 31 || payDay < 1 {
-		_, err = w.Write([]byte("Invalid argument"))
-		if err != nil {
-			return
-		}
+	payDay, err := ParsePayDay(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	now := time.Now()
-	nextPayDay := computations.GetNextPayDay(payDay, now.Day(), now.Month(), now.Year())
-	daysLeft := computations.GetDaysLeft(payDay, now.Day(), now.Month(), nextPayDay.Month(), now.Year())
-	output := NextPayDay{NextPayDay: nextPayDay.Format("January 2, 2006"), DaysLeft: daysLeft}
-	u, err := json.MarshalIndent(output, "", "")
-	_, err = w.Write(u)
+
+	output, err := ParseNextPayDay(payDay, time.Now(), time.Now(), time.Now().Month())
 	if err != nil {
-		_, err = w.Write([]byte("Couldn't write response"))
-		if err != nil {
-			return
-		}
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	jsonEncoder := json.NewEncoder(w)
+	jsonEncoder.SetIndent("", "  ")
+	err = jsonEncoder.Encode(output)
+
+	if err != nil {
+		http.Error(w, "Error encoding JSON response", http.StatusInternalServerError)
 		return
 	}
 }
 
+// ListDates handles an HTTP request and returns a JSON response containing information about the next pay days
 func ListDates(w http.ResponseWriter, r *http.Request) {
-	// Extract the pay day from the URL path
-	parts := strings.Split(r.URL.Path, "/")
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	payDay, err := parsePayDayFromUglyURL(r.URL.Path)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var dates []NextPayDay
 
-	if URLContains(parts, "list-dates") != true {
-		http.Error(w, "Invalid URL", http.StatusBadRequest)
+	// i iterates over each month starting from the current month until the end of the current year.
+	for i := time.Now(); i.Year() <= time.Now().Year(); i = i.AddDate(0, 1, 0) {
+		output, err := ParseNextPayDay(payDay, time.Now(), i, i.Month())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		dates = append(dates, output)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	nextDates := PayDays{NextPayDays: dates}
+	jsonEncoder := json.NewEncoder(w)
+	jsonEncoder.SetIndent("", "  ")
+	err = jsonEncoder.Encode(nextDates)
+
+	if err != nil {
+		http.Error(w, "Error encoding JSON response", http.StatusInternalServerError)
 		return
 	}
-	if len(parts) != 5 {
-		http.Error(w, "Invalid URL", http.StatusBadRequest)
-		return
+
+}
+func parsePayDayFromUglyURL(urlPath string) (int, error) {
+	parts := strings.Split(urlPath, "/")
+	regExp := regexp.MustCompile("^/till-salary/pay-day/(0?[1-9]|[1-2][0-9]|3[0-1])/list-dates$")
+
+	if regExp.MatchString(urlPath) == false {
+		return 0, errors.New("invalid URL")
 	}
+
 	payDay, err := strconv.Atoi(parts[3])
 	if err != nil {
-		http.Error(w, "Invalid pay day", http.StatusBadRequest)
-		return
+		return 0, errors.New("given value is not an integer")
 	}
-	fmt.Println(payDay)
-	var dates []NextPayDay
-	for i := time.Now().Month(); i <= 12; i++ {
-		nextPayDay := computations.GetNextPayDay(payDay, time.Now().Day(), i, time.Now().Year())
-		nextPayDayFormatted := NextPayDay{NextPayDay: nextPayDay.Format("January 2, 2006"), DaysLeft: computations.GetDaysLeft(payDay, time.Now().Day(), time.Now().Month(), i, time.Now().Year())}
-		dates = append(dates, nextPayDayFormatted)
-		if nextPayDay.Month() == 12 {
-			break
-		}
-	}
-	output := PayDays{dates}
-	u, err := json.MarshalIndent(output, "", "")
-	_, err = w.Write(u)
-	if err != nil {
-		_, err = w.Write([]byte("Couldn't write response"))
-		if err != nil {
-			return
-		}
-		return
-	}
-}
-func URLContains(url []string, substring string) bool {
-	ok := false
-	for i := range url {
-		if strings.Contains(url[i], substring) == true {
-			ok = true
-		}
-	}
-	return ok
+	return payDay, nil
 }
