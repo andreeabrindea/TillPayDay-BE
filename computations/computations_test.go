@@ -1,4 +1,4 @@
-package compuations
+package computations
 
 import (
 	"testing"
