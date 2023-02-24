@@ -54,7 +54,7 @@ func TestGetNextPayDay(t *testing.T) {
 		})
 	}
 }
-func TestParseNextPayDay(t *testing.T) {
+func TestGetDaysLeft(t *testing.T) {
 	testsCases := []struct {
 		name             string
 		payDay           int
@@ -66,7 +66,7 @@ func TestParseNextPayDay(t *testing.T) {
 		{
 			name:             "when the next pay day is in the next month",
 			payDay:           15,
-			currentTime:      time.Date(2023, time.February, 23, 0, 0, 0, 0, time.Local),
+			currentTime:      time.Date(2023, time.February, 23, 0, 0, 0, 0, time.UTC),
 			markMonth:        time.February,
 			expectedNoOfDays: 20,
 			expectedErr:      nil,
@@ -74,7 +74,7 @@ func TestParseNextPayDay(t *testing.T) {
 		{
 			name:             "when the next pay day is in the same month",
 			payDay:           17,
-			currentTime:      time.Date(2023, time.November, 10, 0, 0, 0, 0, time.Local),
+			currentTime:      time.Date(2023, time.November, 10, 0, 0, 0, 0, time.UTC),
 			markMonth:        time.November,
 			expectedNoOfDays: 7,
 			expectedErr:      nil,
@@ -82,7 +82,7 @@ func TestParseNextPayDay(t *testing.T) {
 		{
 			name:             "when payDay is not in range 1-31",
 			payDay:           34,
-			currentTime:      time.Date(2023, time.February, 23, 0, 0, 0, 0, time.Local),
+			currentTime:      time.Date(2023, time.February, 23, 0, 0, 0, 0, time.UTC),
 			markMonth:        time.February,
 			expectedNoOfDays: 0,
 			expectedErr:      errors.New("pay day not in the interval 1 - 31"),

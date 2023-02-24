@@ -12,8 +12,8 @@ import (
 	"strings"
 )
 
-// ParsePayDay extracts the pay day value from the URL query parameters of the request, converts it to an integer using the strconv.Atoi function.
-func ParsePayDay(r *http.Request) (int, error) {
+// ParsePayDayFromQueryString extracts the pay day value from the URL query parameters of the request, converts it to an integer using the strconv.Atoi function.
+func ParsePayDayFromQueryString(r *http.Request) (int, error) {
 	payDayStr := r.URL.Query().Get("pay_day")
 	payDay, err := strconv.Atoi(payDayStr)
 	if err != nil {
@@ -22,7 +22,7 @@ func ParsePayDay(r *http.Request) (int, error) {
 	return payDay, nil
 }
 
-// ParseNextPayDay acts like a coordinator between ParsePayDay and GetPayDay.
+// ParseNextPayDay acts like a coordinator between ParsePayDayFromQueryString and GetPayDay.
 // It calculates the next pay and returns a NextPayDay struct that contains the formatted next pay day and the number of days left.
 // Note that currentTime and markerTime could be the same if we want to calculate the days left from now to the next pay day,
 // but if we want to calculate the days from now to the fifth salary day, then currentTime will be time.Now and markerTime the fifth month
@@ -48,7 +48,7 @@ func GetPayDay(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	payDay, err := ParsePayDay(r)
+	payDay, err := ParsePayDayFromQueryString(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -77,7 +77,7 @@ func ListDates(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	payDay, err := parsePayDayFromUglyURL(r.URL.Path)
+	payDay, err := parsePayDayFromURL(r.URL.Path)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -105,7 +105,7 @@ func ListDates(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
-func parsePayDayFromUglyURL(urlPath string) (int, error) {
+func parsePayDayFromURL(urlPath string) (int, error) {
 	parts := strings.Split(urlPath, "/")
 	regExp := regexp.MustCompile("^/till-sallary/pay-day/(0?[1-9]|[1-2][0-9]|3[0-1])/list-dates$")
 

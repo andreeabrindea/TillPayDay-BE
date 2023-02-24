@@ -110,7 +110,7 @@ func TestListDates(t *testing.T) {
 		t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), expected)
 	}
 }
-func TestParsePayDayFromUglyURL(t *testing.T) {
+func TestParsePayDayFromURL(t *testing.T) {
 	testsCases := []struct {
 		name           string
 		url            string
@@ -145,7 +145,7 @@ func TestParsePayDayFromUglyURL(t *testing.T) {
 
 	for _, tc := range testsCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := parsePayDayFromUglyURL(tc.url)
+			got, err := parsePayDayFromURL(tc.url)
 			if err != nil {
 				if tc.errExpected == nil {
 					t.Errorf("unexpected error: %v", err)
@@ -159,12 +159,12 @@ func TestParsePayDayFromUglyURL(t *testing.T) {
 	}
 }
 
-func TestParsePayDay(t *testing.T) {
+func TestParsePayDayFromQueryString(t *testing.T) {
 	req, err := http.NewRequest("GET", "/till-sallary/how-much?pay_day=17", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	payDay, err := ParsePayDay(req)
+	payDay, err := ParsePayDayFromQueryString(req)
 	if payDay != 17 {
 		t.Errorf("Expected 17, but got %v", payDay)
 	}
@@ -173,7 +173,7 @@ func TestParsePayDay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	payDay, err = ParsePayDay(req)
+	payDay, err = ParsePayDayFromQueryString(req)
 	if payDay != 0 {
 		t.Errorf("Expected 0, but got %v", payDay)
 	}
@@ -192,8 +192,8 @@ func TestParseNextPayDay(t *testing.T) {
 		{
 			name:        "when the next pay day is in the next month",
 			payDay:      15,
-			currentTime: time.Date(2023, time.February, 23, 0, 0, 0, 0, time.Local),
-			markerTime:  time.Date(2023, time.February, 23, 0, 0, 0, 0, time.Local),
+			currentTime: time.Date(2023, time.February, 23, 0, 0, 0, 0, time.UTC),
+			markerTime:  time.Date(2023, time.February, 23, 0, 0, 0, 0, time.UTC),
 			month:       time.February,
 			expectedNext: NextPayDay{
 				NextPayDay: "March 15, 2023",
@@ -204,8 +204,8 @@ func TestParseNextPayDay(t *testing.T) {
 		{
 			name:        "when the next pay day is in the same month",
 			payDay:      17,
-			currentTime: time.Date(2023, time.November, 10, 0, 0, 0, 0, time.Local),
-			markerTime:  time.Date(2023, time.November, 10, 0, 0, 0, 0, time.Local),
+			currentTime: time.Date(2023, time.November, 10, 0, 0, 0, 0, time.UTC),
+			markerTime:  time.Date(2023, time.November, 10, 0, 0, 0, 0, time.UTC),
 			month:       time.November,
 			expectedNext: NextPayDay{
 				NextPayDay: "November 17, 2023",
@@ -216,8 +216,8 @@ func TestParseNextPayDay(t *testing.T) {
 		{
 			name:         "when payDay is not in range 1-31",
 			payDay:       34,
-			currentTime:  time.Date(2023, time.February, 23, 0, 0, 0, 0, time.Local),
-			markerTime:   time.Date(2023, time.February, 28, 0, 0, 0, 0, time.Local),
+			currentTime:  time.Date(2023, time.February, 23, 0, 0, 0, 0, time.UTC),
+			markerTime:   time.Date(2023, time.February, 28, 0, 0, 0, 0, time.UTC),
 			month:        time.February,
 			expectedNext: NextPayDay{},
 			expectedErr:  errors.New("pay day not in the interval 1 - 31"),
