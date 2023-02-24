@@ -14,13 +14,13 @@ func GetNextPayDay(payDay int, currentTime time.Time, month time.Month) (time.Ti
 		return time.Time{}, errors.New("pay day not in the interval 1 - 31")
 	}
 	//the date will consist by be the pay day and the month given
-	date := time.Date(currentTime.Year(), month, payDay, 0, 0, 0, 0, time.UTC)
+	date := time.Date(currentTime.Year(), month, payDay, 0, 0, 0, 0, time.Local)
 
 	//check it the pay day is bigger than the number of days of the month ex. payDay=31 and month=2
 	//then the payDay will be on the last day of the month => payDay=28/29
 	noOfDays, _ := GetDaysOfCurrentMonth(month, currentTime)
 	if noOfDays < payDay {
-		date = time.Date(currentTime.Year(), month, noOfDays, 0, 0, 0, 0, time.UTC)
+		date = time.Date(currentTime.Year(), month, noOfDays, 0, 0, 0, 0, time.Local)
 	}
 
 	//check if the payDay of the month has passed
@@ -45,17 +45,17 @@ func GetNextPayDay(payDay int, currentTime time.Time, month time.Month) (time.Ti
 }
 
 // GetDaysLeft calculates the number of days between 2 dates.
-func GetDaysLeft(payDay int, currentTime time.Time, followingMonth time.Month) (int, error) {
+func GetDaysLeft(payDay int, currentTime time.Time, markMonth time.Month) (int, error) {
 	//date is the current time
-	date := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.UTC)
+	date := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, time.Local)
 	//nextDate will be the next pay day of the next month
-	nextDate, err := GetNextPayDay(payDay, currentTime, followingMonth)
+	nextDate, err := GetNextPayDay(payDay, currentTime, markMonth)
 
 	if err != nil {
 		return 0, err
 	}
 
-	nextDate = time.Date(currentTime.Year(), nextDate.Month(), nextDate.Day(), 0, 0, 0, 0, time.UTC)
+	nextDate = time.Date(currentTime.Year(), nextDate.Month(), nextDate.Day(), 0, 0, 0, 0, time.Local)
 	duration := nextDate.Sub(date)
 
 	days := int(duration.Hours() / 24)
@@ -97,12 +97,12 @@ func isLeap(year int) bool {
 // isPublicHoliday has a list of public Romanians holidays dates and checks if the given day and month will be on such a date
 func isPublicHoliday(payDay int, month time.Month) bool {
 	var publicHolidays = []time.Time{
-		time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC),   // New Year's Day
-		time.Date(2023, time.January, 2, 0, 0, 0, 0, time.UTC),   // New Year's Day
-		time.Date(2023, time.January, 24, 0, 0, 0, 0, time.UTC),  // Unirea Principatelor
-		time.Date(2023, time.December, 1, 0, 0, 0, 0, time.UTC),  // National Day
-		time.Date(2023, time.December, 25, 0, 0, 0, 0, time.UTC), // Christmas Day
-		time.Date(2023, time.December, 26, 0, 0, 0, 0, time.UTC), // Christmas' Second Day
+		time.Date(2023, time.January, 1, 0, 0, 0, 0, time.Local),   // New Year's Day
+		time.Date(2023, time.January, 2, 0, 0, 0, 0, time.Local),   // New Year's Day
+		time.Date(2023, time.January, 24, 0, 0, 0, 0, time.Local),  // Unirea Principatelor
+		time.Date(2023, time.December, 1, 0, 0, 0, 0, time.Local),  // National Day
+		time.Date(2023, time.December, 25, 0, 0, 0, 0, time.Local), // Christmas Day
+		time.Date(2023, time.December, 26, 0, 0, 0, 0, time.Local), // Christmas' Second Day
 	}
 	for _, holiday := range publicHolidays {
 		if holiday.Day() == payDay && holiday.Month() == month {

@@ -107,7 +107,7 @@ func ListDates(w http.ResponseWriter, r *http.Request) {
 }
 func parsePayDayFromUglyURL(urlPath string) (int, error) {
 	parts := strings.Split(urlPath, "/")
-	regExp := regexp.MustCompile("^/till-salary/pay-day/(0?[1-9]|[1-2][0-9]|3[0-1])/list-dates$")
+	regExp := regexp.MustCompile("^/till-sallary/pay-day/(0?[1-9]|[1-2][0-9]|3[0-1])/list-dates$")
 
 	if regExp.MatchString(urlPath) == false {
 		return 0, errors.New("invalid URL")
