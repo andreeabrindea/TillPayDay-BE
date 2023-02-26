@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
+	"internship-project3/computations"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -28,12 +30,13 @@ func TestGetPayDay(t *testing.T) {
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
-
+	nextPayDay, _ := computations.GetNextPayDay(15, time.Now(), time.Now().Month())
+	daysLeft, _ := computations.GetDaysLeft(15, time.Now(), time.Now().Month())
 	// Check the response body
-	expected := `{
-  "next_pay_day": "March 15, 2023",
-  "days_left": 20
-}`
+	expected := fmt.Sprintf(`{
+  "next_pay_day": "%v",
+  "days_left": %v
+}`, nextPayDay.Format("January 2, 2006"), daysLeft)
 	if strings.TrimSpace(rr.Body.String()) != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), expected)
 	}
@@ -56,9 +59,13 @@ func TestListDates(t *testing.T) {
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
-
+	//var dates []NextPayDay
 	// Check the response body
-	expected := `{
+	//for i := time.Now(); i.Year() <= time.Now().Year(); i = i.AddDate(0, 1, 0) {
+	//	output, _ := ParseNextPayDay(31, time.Now(), i, i.Month())
+	//	dates = append(dates, output)
+	//}
+	expected := fmt.Sprintf(`{
   "next_pay_days": [
     {
       "next_pay_day": "February 28, 2023",
@@ -105,7 +112,7 @@ func TestListDates(t *testing.T) {
       "days_left": 309
     }
   ]
-}`
+}`)
 	if strings.TrimSpace(rr.Body.String()) != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), expected)
 	}
