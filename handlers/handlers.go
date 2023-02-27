@@ -19,6 +19,9 @@ func ParsePayDayFromQueryString(r *http.Request) (int, error) {
 	if err != nil {
 		return 0, errors.New("pay day should be an integer")
 	}
+	if payDay < 1 {
+		return 0, errors.New("pay day can't be negative")
+	}
 	return payDay, nil
 }
 
@@ -116,7 +119,7 @@ func parsePayDayFromURL(urlPath string) (int, error) {
 	regExp := regexp.MustCompile("^/till-sallary/pay-day/(0?[1-9]|[1-2][0-9]|3[0-1])/list-dates$")
 
 	if regExp.MatchString(urlPath) == false {
-		return 0, errors.New("invalid URL")
+		return 0, errors.New("invalid URL. Try an integer in range 1-31 or check is url is correct")
 	}
 
 	payDay, err := strconv.Atoi(parts[3])
