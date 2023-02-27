@@ -61,6 +61,7 @@ func TestListDates(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 	//because it is a long list of nextPayDays, I mock the first one and verify if it is in the list
+	//it is useless to verify all of them, in December will be just one next pay day
 	nextPayDay, _ := computations.GetNextPayDay(31, time.Now(), time.Now().Month())
 	daysLeft, _ := computations.GetDaysLeft(31, time.Now(), time.Now().Month())
 	expected := fmt.Sprintf(`{
@@ -71,12 +72,9 @@ func TestListDates(t *testing.T) {
 	var nextPayDays PayDays
 	var oneExpectedNextPayDay NextPayDay
 
-	if err := json.Unmarshal([]byte(rr.Body.String()), &nextPayDays); err != nil {
-		fmt.Println("ugh: ", err)
-	}
-	if err := json.Unmarshal([]byte(expected), &oneExpectedNextPayDay); err != nil {
-		fmt.Println("ugh: ", err)
-	}
+	_ = json.Unmarshal([]byte(rr.Body.String()), &nextPayDays)
+	_ = json.Unmarshal([]byte(expected), &oneExpectedNextPayDay)
+
 	found := false
 	for _, d := range nextPayDays.NextPayDays {
 		if d == oneExpectedNextPayDay {
