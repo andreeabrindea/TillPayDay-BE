@@ -19,8 +19,8 @@ func ParsePayDayFromQueryString(r *http.Request) (int, error) {
 	if err != nil {
 		return 0, errors.New("pay day should be an integer")
 	}
-	if payDay < 1 {
-		return 0, errors.New("pay day can't be negative")
+	if payDay < 1 || payDay > 31 {
+		return 0, errors.New("pay day should be in range 1-31")
 	}
 	return payDay, nil
 }
