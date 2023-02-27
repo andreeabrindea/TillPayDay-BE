@@ -213,7 +213,6 @@ func TestIsHoliday(t *testing.T) {
 }
 
 func TestGetRomanianHolidays(t *testing.T) {
-	// Call the GetRomanianHolidays function with the connection
 	holidays, err := GetRomanianHolidays("postgres://xvyctfje:5yGXTCPQKkKJe0rjuvsJtFOQF7BiOBJp@mouse.db.elephantsql.com/xvyctfje")
 	if err != nil {
 		t.Fatalf("Failed to get Romanian holidays: %v", err)
