@@ -28,6 +28,9 @@ func ParsePayDayFromQueryString(r *http.Request) (int, error) {
 // but if we want to calculate the days from now to the fifth salary day, then currentTime will be time.Now and markerTime the fifth month
 func ParseNextPayDay(payDay int, currentTime time.Time, markerTime time.Time, month time.Month) (NextPayDay, error) {
 	nextPayDay, err := computations.GetNextPayDay(payDay, markerTime, month)
+	if nextPayDay.Year() != currentTime.Year() {
+		return NextPayDay{}, nil
+	}
 	if err != nil {
 		return NextPayDay{}, err
 	}
@@ -36,8 +39,8 @@ func ParseNextPayDay(payDay int, currentTime time.Time, markerTime time.Time, mo
 		return NextPayDay{}, err
 	}
 	output := NextPayDay{
-		NextPayDay: nextPayDay.Format("January 2, 2006"),
-		DaysLeft:   daysLeft,
+		NextDay:  nextPayDay.Format("January 2, 2006"),
+		DaysLeft: daysLeft,
 	}
 	return output, nil
 }
@@ -83,15 +86,18 @@ func ListDates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var dates []NextPayDay
+	currentTime := time.Now()
 
 	// i iterates over each month starting from the current month until the end of the current year.
-	for i := time.Now(); i.Year() <= time.Now().Year(); i = i.AddDate(0, 1, 0) {
-		output, err := ParseNextPayDay(payDay, time.Now(), i, i.Month())
+	for i := time.Now(); i.Year() == time.Now().Year(); i = i.AddDate(0, 1, 0) {
+		output, err := ParseNextPayDay(payDay, currentTime, i, i.Month())
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		dates = append(dates, output)
+		if output != (NextPayDay{}) {
+			dates = append(dates, output)
+		}
 	}
 	w.Header().Set("Content-Type", "application/json")
 	nextDates := PayDays{NextPayDays: dates}

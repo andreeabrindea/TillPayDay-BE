@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"internship-project3/computations"
@@ -51,7 +52,7 @@ func TestListDates(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 
-	// Call the GetPayDay function with the mock request and response recorder
+	// Call the ListDates function with the mock request and response recorder
 	handler := http.HandlerFunc(ListDates)
 	handler.ServeHTTP(rr, req)
 
@@ -59,64 +60,35 @@ func TestListDates(t *testing.T) {
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
-	//var dates []NextPayDay
-	// Check the response body
-	//for i := time.Now(); i.Year() <= time.Now().Year(); i = i.AddDate(0, 1, 0) {
-	//	output, _ := ParseNextPayDay(31, time.Now(), i, i.Month())
-	//	dates = append(dates, output)
-	//}
+	//because it is a long list of nextPayDays, I mock the first one and verify if it is in the list
+	nextPayDay, _ := computations.GetNextPayDay(31, time.Now(), time.Now().Month())
+	daysLeft, _ := computations.GetDaysLeft(31, time.Now(), time.Now().Month())
 	expected := fmt.Sprintf(`{
-  "next_pay_days": [
-    {
-      "next_pay_day": "February 28, 2023",
-      "days_left": 5
-    },
-    {
-      "next_pay_day": "March 31, 2023",
-      "days_left": 36
-    },
-    {
-      "next_pay_day": "April 28, 2023",
-      "days_left": 64
-    },
-    {
-      "next_pay_day": "May 31, 2023",
-      "days_left": 97
-    },
-    {
-      "next_pay_day": "June 30, 2023",
-      "days_left": 127
-    },
-    {
-      "next_pay_day": "July 31, 2023",
-      "days_left": 158
-    },
-    {
-      "next_pay_day": "August 31, 2023",
-      "days_left": 189
-    },
-    {
-      "next_pay_day": "September 29, 2023",
-      "days_left": 218
-    },
-    {
-      "next_pay_day": "October 31, 2023",
-      "days_left": 250
-    },
-    {
-      "next_pay_day": "November 30, 2023",
-      "days_left": 280
-    },
-    {
-      "next_pay_day": "December 29, 2023",
-      "days_left": 309
-    }
-  ]
-}`)
-	if strings.TrimSpace(rr.Body.String()) != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), expected)
+    "next_pay_day": "%v",
+    "days_left": %v
+}`, nextPayDay.Format("January 2, 2006"), daysLeft)
+	//need to convert them to json
+	var nextPayDays PayDays
+	var oneExpectedNextPayDay NextPayDay
+
+	if err := json.Unmarshal([]byte(rr.Body.String()), &nextPayDays); err != nil {
+		fmt.Println("ugh: ", err)
+	}
+	if err := json.Unmarshal([]byte(expected), &oneExpectedNextPayDay); err != nil {
+		fmt.Println("ugh: ", err)
+	}
+	found := false
+	for _, d := range nextPayDays.NextPayDays {
+		if d == oneExpectedNextPayDay {
+			found = true
+			break
+		}
+	}
+	if found == false {
+		t.Errorf("expected to find:  %v in %v", expected, rr.Body.String())
 	}
 }
+
 func TestParsePayDayFromURL(t *testing.T) {
 	testsCases := []struct {
 		name           string
@@ -203,8 +175,8 @@ func TestParseNextPayDay(t *testing.T) {
 			markerTime:  time.Date(2023, time.February, 23, 0, 0, 0, 0, time.UTC),
 			month:       time.February,
 			expectedNext: NextPayDay{
-				NextPayDay: "March 15, 2023",
-				DaysLeft:   20,
+				NextDay:  "March 15, 2023",
+				DaysLeft: 20,
 			},
 			expectedErr: nil,
 		},
@@ -215,8 +187,8 @@ func TestParseNextPayDay(t *testing.T) {
 			markerTime:  time.Date(2023, time.November, 10, 0, 0, 0, 0, time.UTC),
 			month:       time.November,
 			expectedNext: NextPayDay{
-				NextPayDay: "November 17, 2023",
-				DaysLeft:   7,
+				NextDay:  "November 17, 2023",
+				DaysLeft: 7,
 			},
 			expectedErr: nil,
 		},

@@ -5,6 +5,6 @@ type PayDays struct {
 }
 
 type NextPayDay struct {
-	NextPayDay string `json:"next_pay_day"`
-	DaysLeft   int    `json:"days_left"`
+	NextDay  string `json:"next_pay_day"`
+	DaysLeft int    `json:"days_left"`
 }

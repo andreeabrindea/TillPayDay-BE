@@ -14,49 +14,40 @@ func GetNextPayDay(payDay int, currentTime time.Time, month time.Month) (time.Ti
 	if payDay < 1 || payDay > 31 {
 		return time.Time{}, errors.New("pay day not in the interval 1 - 31")
 	}
-	//the date will consist by be the pay day and the month given
+	// the date will consist of the pay day and the month given
 	date := time.Date(currentTime.Year(), month, payDay, 0, 0, 0, 0, time.Local)
 
-	//check it the pay day is bigger than the number of days of the month ex. payDay=31 and month=2
-	//then the payDay will be on the last day of the month => payDay=28/29
+	// check if the pay day is bigger than the number of days of the month ex. payDay=31 and month=2
+	// then the payDay will be on the last day of the month => payDay=28/29
 	noOfDays, _ := GetDaysOfCurrentMonth(month, currentTime)
 	if noOfDays < payDay {
 		date = time.Date(currentTime.Year(), month, noOfDays, 0, 0, 0, 0, time.Local)
 	}
 
-	//check if the payDay of the month has passed if yes => we add a month
+	// check if the pay day of the month has passed if yes => we add a month
 	if payDay < currentTime.Day() {
 		date = date.AddDate(0, 1, 0)
 	}
-
-	//check if the payDay is on a public holiday or on weekend
-	//if yes => payDay will be with 1 or 2 (if it is Sunday) days before
-	for {
-		if isPublicHoliday(date.Day(), date.Month(), date) {
-			date = date.AddDate(0, 0, 1)
-		} else if date.Weekday() == time.Sunday {
-			date = date.AddDate(0, 0, 1)
-		} else if date.Weekday() == time.Saturday {
-			date = date.AddDate(0, 0, 2)
-		} else {
-			break
-		}
-	}
-
-	// check if previous day is a holiday
-	prevDay := date.AddDate(0, 0, -1)
-	for {
-		if isPublicHoliday(prevDay.Day(), prevDay.Month(), prevDay) {
-			prevDay = prevDay.AddDate(0, 0, 1)
-		} else {
-			break
-		}
-	}
-	// if previous day is a holiday, add one more day
-	if prevDay.Day() == payDay+1 && prevDay.Month() == month {
+	if date.Weekday() == time.Sunday {
 		date = date.AddDate(0, 0, 1)
 	}
-
+	if date.Weekday() == time.Saturday {
+		date = date.AddDate(0, 0, 2)
+	}
+	for {
+		if isPublicHoliday(date) == true {
+			date = date.AddDate(0, 0, 1)
+		}
+		if date.Weekday() == time.Sunday {
+			date = date.AddDate(0, 0, 1)
+		}
+		if date.Weekday() == time.Saturday {
+			date = date.AddDate(0, 0, 2)
+		}
+		if isPublicHoliday(date) == false {
+			break
+		}
+	}
 	return date, nil
 }
 
@@ -127,19 +118,19 @@ func IsLeap(year int) (bool, error) {
 }
 
 // isPublicHoliday has a list of public Romanians holidays dates and checks if the given day and month will be on such a date
-func isPublicHoliday(payDay int, month time.Month, currentTime time.Time) bool {
+func isPublicHoliday(date time.Time) bool {
 	var publicHolidays = []time.Time{
-		time.Date(currentTime.Year(), time.January, 1, 0, 0, 0, 0, time.Local),  // New Year's Day
-		time.Date(currentTime.Year(), time.January, 2, 0, 0, 0, 0, time.Local),  // New Year's Day
-		time.Date(currentTime.Year(), time.January, 24, 0, 0, 0, 0, time.Local), // Unirea Principatelor
-		time.Date(currentTime.Year(), time.June, 1, 0, 0, 0, 0, time.Local),
-		time.Date(currentTime.Year(), time.November, 30, 0, 0, 0, 0, time.Local),
-		time.Date(currentTime.Year(), time.December, 1, 0, 0, 0, 0, time.Local),  // National Day
-		time.Date(currentTime.Year(), time.December, 25, 0, 0, 0, 0, time.Local), // Christmas Day
-		time.Date(currentTime.Year(), time.December, 26, 0, 0, 0, 0, time.Local), // Christmas' Second Day
+		time.Date(date.Year(), time.January, 1, 0, 0, 0, 0, time.Local),   // New Year's Day
+		time.Date(date.Year(), time.January, 2, 0, 0, 0, 0, time.Local),   // New Year's Day
+		time.Date(date.Year(), time.January, 24, 0, 0, 0, 0, time.Local),  // Unirea Principatelor
+		time.Date(date.Year(), time.June, 1, 0, 0, 0, 0, time.Local),      //Children's Day
+		time.Date(date.Year(), time.November, 30, 0, 0, 0, 0, time.Local), // Saint Andrew
+		time.Date(date.Year(), time.December, 1, 0, 0, 0, 0, time.Local),  // National Day
+		time.Date(date.Year(), time.December, 25, 0, 0, 0, 0, time.Local), // Christmas Day
+		time.Date(date.Year(), time.December, 26, 0, 0, 0, 0, time.Local), // Christmas' Second Day
 	}
 	for _, holiday := range publicHolidays {
-		if holiday.Day() == payDay && holiday.Month() == month {
+		if holiday.Day() == date.Day() && holiday.Month() == date.Month() {
 			return true
 		}
 	}

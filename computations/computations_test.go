@@ -182,30 +182,24 @@ func TestIsLeap(t *testing.T) {
 }
 func TestIsPublicHoliday(t *testing.T) {
 	testsCases := []struct {
-		name        string
-		payDay      int
-		month       time.Month
-		currentTime time.Time
-		expected    bool
+		name     string
+		date     time.Time
+		expected bool
 	}{
 		{
-			name:        "when a public holiday that falls on the given day and month",
-			payDay:      1,
-			month:       time.January,
-			currentTime: time.Now(),
-			expected:    true,
+			name:     "when a public holiday that falls on the given day and month",
+			date:     time.Date(2023, 1, 1, 0, 0, 0, 0, time.Local),
+			expected: true,
 		},
 		{
-			name:        "when the given day is not a public holiday",
-			payDay:      17,
-			month:       time.November,
-			currentTime: time.Now(),
-			expected:    false,
+			name:     "when the given day is not a public holiday",
+			date:     time.Date(2023, 11, 17, 0, 0, 0, 0, time.Local),
+			expected: false,
 		},
 	}
 	for _, tc := range testsCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := isPublicHoliday(tc.payDay, tc.month, tc.currentTime)
+			got := isPublicHoliday(tc.date)
 			if got != tc.expected {
 				t.Errorf("mismatch (-wanted, +got):\n%v,%v", tc.expected, got)
 			}
