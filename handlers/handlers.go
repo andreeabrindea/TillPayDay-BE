@@ -4,12 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"internship-project3/computations"
-	"regexp"
-	"time"
-
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // ParsePayDayFromQueryString extracts the pay day value from the URL query parameters of the request, converts it to an integer using the strconv.Atoi function.
@@ -67,7 +66,6 @@ func GetPayDay(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 	jsonEncoder := json.NewEncoder(w)
 	jsonEncoder.SetIndent("", "  ")
 	err = jsonEncoder.Encode(output)
@@ -104,7 +102,6 @@ func ListDates(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 	nextDates := PayDays{NextPayDays: dates}
 	jsonEncoder := json.NewEncoder(w)
 	jsonEncoder.SetIndent("", "  ")
