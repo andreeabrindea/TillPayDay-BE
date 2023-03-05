@@ -116,23 +116,3 @@ func IsLeap(year int) (bool, error) {
 	}
 	return false, nil
 }
-
-// isPublicHoliday has a list of public Romanians holidays dates and checks if the given day and month will be on such a date
-func isPublicHoliday(date time.Time) bool {
-	var publicHolidays = []time.Time{
-		time.Date(date.Year(), time.January, 1, 0, 0, 0, 0, time.Local),   // New Year's Day
-		time.Date(date.Year(), time.January, 2, 0, 0, 0, 0, time.Local),   // New Year's Day
-		time.Date(date.Year(), time.January, 24, 0, 0, 0, 0, time.Local),  // Unirea Principatelor
-		time.Date(date.Year(), time.June, 1, 0, 0, 0, 0, time.Local),      //Children's Day
-		time.Date(date.Year(), time.November, 30, 0, 0, 0, 0, time.Local), // Saint Andrew
-		time.Date(date.Year(), time.December, 1, 0, 0, 0, 0, time.Local),  // National Day
-		time.Date(date.Year(), time.December, 25, 0, 0, 0, 0, time.Local), // Christmas Day
-		time.Date(date.Year(), time.December, 26, 0, 0, 0, 0, time.Local), // Christmas' Second Day
-	}
-	for _, holiday := range publicHolidays {
-		if holiday.Day() == date.Day() && holiday.Month() == date.Month() {
-			return true
-		}
-	}
-	return false
-}
