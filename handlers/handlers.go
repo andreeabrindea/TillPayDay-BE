@@ -46,45 +46,47 @@ func ParseNextPayDay(payDay int, currentTime time.Time, markerTime time.Time, mo
 	}
 	return output, nil
 }
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
 
 // GetPayDay handles an HTTP request and returns a JSON response containing information about the next pay day
 func GetPayDay(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	payDay, err := ParsePayDayFromQueryString(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
 	output, err := ParseNextPayDay(payDay, time.Now(), time.Now(), time.Now().Month())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	jsonEncoder := json.NewEncoder(w)
-	jsonEncoder.SetIndent("", "  ")
-	err = jsonEncoder.Encode(output)
-
+	u, _ := json.MarshalIndent(output, "", "  ")
+	_, err = w.Write(u)
 	if err != nil {
-		http.Error(w, "Error encoding JSON response", http.StatusInternalServerError)
 		return
 	}
 }
 
 // ListDates handles an HTTP request and returns a JSON response containing information about the next pay days
 func ListDates(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	payDay, err := parsePayDayFromURL(r.URL.Path)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 	var dates []NextPayDay
@@ -103,15 +105,11 @@ func ListDates(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	nextDates := PayDays{NextPayDays: dates}
-	jsonEncoder := json.NewEncoder(w)
-	jsonEncoder.SetIndent("", "  ")
-	err = jsonEncoder.Encode(nextDates)
-
+	next, _ := json.MarshalIndent(nextDates, "", "")
+	_, err = w.Write(next)
 	if err != nil {
-		http.Error(w, "Error encoding JSON response", http.StatusInternalServerError)
 		return
 	}
-
 }
 func parsePayDayFromURL(urlPath string) (int, error) {
 	parts := strings.Split(urlPath, "/")
