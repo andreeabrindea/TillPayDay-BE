@@ -49,8 +49,7 @@ func TestListDates(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Create a mock HTTP response recorder
-	//captures the response sent by an HTTP handler in the test
+
 	rr := httptest.NewRecorder()
 
 	// Call the ListDates function with the mock request and response recorder
@@ -62,17 +61,17 @@ func TestListDates(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 	//because it is a long list of nextPayDays, I mock the first one and verify if it is in the list
-	//it is useless to verify the rest of them, in December will be just one next pay day
+	//it is useless to verify all of them, in December will be just one next pay day
 	nextPayDay, _ := computations.GetNextPayDay(31, time.Now(), time.Now().Month())
 	daysLeft, _ := computations.GetDaysLeft(31, time.Now(), time.Now().Month())
 	expected := fmt.Sprintf(`{
     "next_pay_day": "%v",
     "days_left": %v
 }`, nextPayDay.Format("January 2, 2006"), daysLeft)
-
 	//need to convert them to json
 	var nextPayDays PayDays
 	var oneExpectedNextPayDay NextPayDay
+
 	_ = json.Unmarshal([]byte(rr.Body.String()), &nextPayDays)
 	_ = json.Unmarshal([]byte(expected), &oneExpectedNextPayDay)
 

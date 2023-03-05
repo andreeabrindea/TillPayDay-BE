@@ -2,6 +2,7 @@ package computations
 
 import (
 	"errors"
+	_ "github.com/jackc/pgx/v5"
 	"testing"
 	"time"
 )
@@ -180,30 +181,45 @@ func TestIsLeap(t *testing.T) {
 		})
 	}
 }
-func TestIsPublicHoliday(t *testing.T) {
+func TestIsHoliday(t *testing.T) {
+	_, err := GetRomanianHolidays("postgres://xvyctfje:5yGXTCPQKkKJe0rjuvsJtFOQF7BiOBJp@mouse.db.elephantsql.com/xvyctfje")
+	if err != nil {
+		t.Errorf("Couldn't get the data from database")
+	}
 	testsCases := []struct {
-		name     string
-		date     time.Time
-		expected bool
+		name string
+		date time.Time
+		ok   bool
 	}{
 		{
-			name:     "when a public holiday that falls on the given day and month",
-			date:     time.Date(2023, 1, 1, 0, 0, 0, 0, time.Local),
-			expected: true,
-		},
+			name: "when date is Christmas' day",
+			date: time.Date(time.Now().Year(), 12, 25, 0, 0, 0, 0, time.Local),
+			ok:   true,
+		}, //year = time.Now.Year() just in case I delete old dates from db
 		{
-			name:     "when the given day is not a public holiday",
-			date:     time.Date(2023, 11, 17, 0, 0, 0, 0, time.Local),
-			expected: false,
+			name: "when date is not a holiday",
+			date: time.Date(time.Now().Year(), 11, 17, 0, 0, 0, 0, time.Local),
+			ok:   false,
 		},
 	}
 	for _, tc := range testsCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := isPublicHoliday(tc.date)
-			if got != tc.expected {
-				t.Errorf("mismatch (-wanted, +got):\n%v,%v", tc.expected, got)
+			got := IsHoliday(tc.date)
+			if got != tc.ok {
+				t.Errorf("mismatch (-wanted:, +got: ):\n%v,%v", tc.ok, got)
 			}
 		})
 	}
+}
 
+func TestGetRomanianHolidays(t *testing.T) {
+	holidays, err := GetRomanianHolidays("postgres://xvyctfje:5yGXTCPQKkKJe0rjuvsJtFOQF7BiOBJp@mouse.db.elephantsql.com/xvyctfje")
+	if err != nil {
+		t.Fatalf("Failed to get Romanian holidays: %v", err)
+	}
+
+	// Check that the holidays map is not empty
+	if len(holidays) == 0 {
+		t.Fatalf("Holidays map is empty")
+	}
 }
