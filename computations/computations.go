@@ -35,7 +35,7 @@ func GetNextPayDay(payDay int, currentTime time.Time, month time.Month) (time.Ti
 		date = date.AddDate(0, 0, 2)
 	}
 	for {
-		if isPublicHoliday(date) == true {
+		if IsHoliday(date) == true {
 			date = date.AddDate(0, 0, 1)
 		}
 		if date.Weekday() == time.Sunday {
@@ -44,7 +44,7 @@ func GetNextPayDay(payDay int, currentTime time.Time, month time.Month) (time.Ti
 		if date.Weekday() == time.Saturday {
 			date = date.AddDate(0, 0, 2)
 		}
-		if isPublicHoliday(date) == false {
+		if IsHoliday(date) == false {
 			break
 		}
 	}
